@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: api-docker-bot
+
+server:
+  port: ${SERVER_PORT:8081}
+
+# Evolution API
+evolution:
+  base-url: ${EVOLUTION_BASE_URL:http://localhost:8082}
+  instance: ${EVOLUTION_INSTANCE:Gerenciador_containeres}
+  url: ${EVOLUTION_URL:http://localhost:8082/message/sendText/Gerenciador_containeres}
+  # Token enviado no header "apikey".
+  # Origem: AUTHENTICATION_API_KEY da Evolution API (arquivo evolution-api/.env).
+  token: ${EVOLUTION_TOKEN:}
+
+# Docker
+docker:
+  host: ${DOCKER_HOST:tcp://localhost:2375}
+  blocked:
+    - evolution_api
+    - postgres
+    - redis
+
+# Numeros autorizados (formato: DDI + DDD + numero, sem simbolos)
+whatsapp:
+  whitelist:
+    - ${WHATSAPP_ADMIN:556592920095}
