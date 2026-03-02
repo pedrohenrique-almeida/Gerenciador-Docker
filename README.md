@@ -14,134 +14,124 @@ Containers protegidos em `docker.blocked` nao podem ser iniciados/parados.
 ## Estrutura
 
 ```text
-GerenciadorDockerWhatsApp/
-|- api/                  # API Spring Boot (webhook + comandos Docker)
-|- evolution-api/        # Docker Compose da Evolution + Postgres + Redis + pgAdmin
-`- documentation/README  # este guia
+Gerenciador-Docker/
+|- api-springBoot/       # API Spring Boot (webhook + comandos Docker)
+|- evolution-api/        # Docker Compose da Evolution + Postgres + Redis + pgAdmin + API Spring
+`- README.md             # este guia
 ```
 
 ## Pre-requisitos
 
-- Docker Desktop
+- Docker
 - Docker Compose
-- Java 21 
+- Java 21 (se for rodar a API fora de container)
 
-## Configuracao de tokens
+## Regra de token (obrigatoria)
 
-Existem dois nomes, eles devem ter o mesmo valor.
+Esses dois valores devem ser iguais:
 
-1. `AUTHENTICATION_API_KEY` Evolution API (tem que definir no docker-compose)
-2. `EVOLUTION_TOKEN` (API Spring Boot)
+- `AUTHENTICATION_API_KEY` (Evolution API)
+- `EVOLUTION_TOKEN` (API Spring Boot)
 
-Regra:
-
-- `AUTHENTICATION_API_KEY` = `EVOLUTION_TOKEN`
-
-Isso significa:
-
-- a Evolution usa `AUTHENTICATION_API_KEY` para autenticar chamadas
-- a API Spring envia mensagens para Evolution usando `EVOLUTION_TOKEN` no header `apikey`
-
-## Ordem exata de configuracao (recomendado: subir tudo no mesmo compose)
-
-### 1) Criar arquivo `.env` da Evolution
+## Configuracao do `.env`
 
 No diretorio `evolution-api`:
 
-```powershell
+```bash
 cd evolution-api
-Copy-Item .env.example .env
+cp .env.example .env
 ```
 
-Abra `evolution-api/.env` e preencha:
+Edite o arquivo `evolution-api/.env` e preencha os valores.
 
-- `AUTHENTICATION_API_KEY`: crie uma chave forte (ex: 32+ caracteres)
-- `POSTGRES_PASSWORD`: senha do Postgres
-- `PGADMIN_DEFAULT_PASSWORD`: senha
-- `DATABASE_CONNECTION_URI` com a mesma senha do Postgres
+Principais campos:
 
-Exemplo de `DATABASE_CONNECTION_URI`:
+- `AUTHENTICATION_API_KEY`
+- `EVOLUTION_TOKEN` (mesmo valor da chave acima)
+- `POSTGRES_PASSWORD`
+- `PGADMIN_DEFAULT_PASSWORD`
+- `DATABASE_CONNECTION_URI` (mesma senha do Postgres)
+- `WHATSAPP_ADMIN` (DDI + DDD + numero, sem simbolos)
 
-`postgresql://postgres:senha_do_postgres@postgres:5432/evolution?schema=public`
+## DOCKER_HOST (valor correto por ambiente)
 
-### 2) Descomentar a API Spring no compose
+Esse campo define como a API Spring conversa com o Docker da maquina host.
 
-No arquivo `evolution-api/docker-compose.yaml`, descomente o bloco:
+Exemplos mais comuns para `DOCKER_HOST`:
 
-- `api-whatsapp`
+- Docker Desktop (Windows/macOS): `tcp://host.docker.internal:2375`
+- Linux com Docker socket montado no container: `unix:///var/run/docker.sock`
+- Linux com Docker remoto via TCP (sem TLS, ambiente controlado): `tcp://172.17.0.1:2375`
+- Docker remoto com TLS: `tcp://SEU_HOST:2376`
 
-No bloco `api-whatsapp`, configure:
+Valor padrao atual do projeto no `.env`:
 
-- `EVOLUTION_TOKEN`: coloque o mesmo valor de `AUTHENTICATION_API_KEY`
-- `WHATSAPP_ADMIN`: numero autorizado (DDI + DDD + numero, sem simbolos)
+- `DOCKER_HOST=tcp://host.docker.internal:2375`
 
-### 3) Subir tudo
+Se esse valor nao funcionar no seu ambiente, ajuste apenas no `evolution-api/.env` e rode novamente `docker compose up -d`.
 
-Ainda em `evolution-api`:
+## Como subir
 
-```powershell
+No diretorio `evolution-api`:
+
+```bash
 docker compose up -d
 ```
 
-### 4) Acessar Evolution e criar instancia
+## Importante: como o compose usa o `.env`
 
-Acesse painel/API da Evolution em:
+Sim, o projeto esta configurado para ler valores do `.env`.
+
+- O `docker compose` carrega automaticamente `evolution-api/.env`.
+- O serviço `evolution-api` usa `env_file: .env`.
+- O serviço `api-springBoot` tambem usa `env_file: .env` e variaveis `${...}`.
+
+Na pratica: voce configura o `.env` e sobe com `docker compose up -d`.
+
+## Criacao da instancia na Evolution
+
+Acesse:
 
 - `http://localhost:8082`
 
-Crie a instancia com o nome esperado pelo projeto:
+Crie a instancia com o nome:
 
 - `Gerenciador_containeres`
 
-Se mudar o nome da instancia, ajuste tambem:
+Se mudar o nome da instancia, ajuste no `.env`:
 
 - `EVOLUTION_INSTANCE`
 - `EVOLUTION_URL`
 
-### 5) Configurar webhook da instancia
+## Webhook da instancia
 
 Como tudo esta na mesma rede Docker, use:
 
-- `http://api-whatsapp:8081/webhook/receber`
+- `http://api-springBoot:8081/webhook/receber`
 
 Nao use `localhost` nesse caso.
 
-## Sobre `application.yaml`
+## Validacao rapida
 
-Voce nao precisa colocar segredo fixo nele.
+1. `docker compose ps`
+2. Conferir se estao `Up`: `evolution_api`, `postgres`, `redis`, `api_whatsapp`
+3. Enviar `1` no WhatsApp para o numero autorizado em `WHATSAPP_ADMIN`
 
-O arquivo ja esta pronto para variaveis de ambiente:
+## Erros comuns
 
-- `evolution.token: ${EVOLUTION_TOKEN:}`
-
-Ou seja:
-
-- o valor real vem do `docker-compose`/`.env`
-- `application.yaml` so referencia a variavel
-
-## Como descobrir se esta funcionando
-
-1. `docker ps` deve mostrar: `evolution_api`, `postgres`, `redis`, `api_whatsapp`
-2. Envie `1` no WhatsApp para o numero conectado
-3. A resposta deve trazer lista de containers
-
-## Erros comuns e correcao rapida
-
-- Erro 401/403 na Evolution:
-  - `EVOLUTION_TOKEN` diferente de `AUTHENTICATION_API_KEY`
+- `401/403` na Evolution:
+  - `AUTHENTICATION_API_KEY` e `EVOLUTION_TOKEN` diferentes.
 
 - Sem resposta no WhatsApp:
-  - numero nao esta em `WHATSAPP_ADMIN`
-  - webhook da instancia nao aponta para `/webhook/receber`
+  - numero nao esta em `WHATSAPP_ADMIN`.
+  - webhook da instancia nao aponta para `/webhook/receber`.
 
-- Webhook nao chega:
-  - usando `localhost` em vez de `api-whatsapp` quando tudo esta em compose
+- `docker compose` mostrando aviso de `version is obsolete`:
+  - resolvido neste projeto (campo `version` removido do compose).
 
 ## Fluxo alternativo (Spring fora do Docker)
 
-Se quiser rodar Spring local e Evolution em container:
-
-1. Suba apenas `evolution-api` via compose
-2. Rode Spring local (`./mvnw spring-boot:run`)
-3. Defina `EVOLUTION_TOKEN` no terminal local
-4. Configure webhook para `http://host.docker.internal:8081/webhook/receber` (ou ngrok)
+1. Suba apenas os servicos da pasta `evolution-api`.
+2. Rode a API local em `api-springBoot`.
+3. Defina `EVOLUTION_TOKEN` no ambiente local.
+4. Configure webhook para `http://host.docker.internal:8081/webhook/receber` (ou ngrok).
