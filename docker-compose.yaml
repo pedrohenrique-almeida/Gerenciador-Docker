@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - evolution-net
+    ports:
+      - "5432:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "4000:80"
+    networks:
+      - evolution-net
+    depends_on:
+      - postgres
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - evolution-net
+
+  evolution-api:
+    image: atendai/evolution-api:latest
+    container_name: evolution_api
+    restart: always
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: 8080
+    volumes:
+      - evolution_instances:/evolution/instances
+    ports:
+      - "8082:8080"
+    networks:
+      - evolution-net
+    depends_on:
+      - postgres
+      - redis
+
+  api-springBoot:
+    image: maven:3.9-eclipse-temurin-21
+    container_name: api_whatsapp
+    working_dir: /workspace
+    volumes:
+      - ../api-springBoot:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: mvn spring-boot:run
+    env_file:
+      - .env
+    environment:
+      SERVER_PORT: ${SERVER_PORT:-8081}
+      EVOLUTION_BASE_URL: ${EVOLUTION_BASE_URL:-http://evolution-api:8080}
+      EVOLUTION_INSTANCE: ${EVOLUTION_INSTANCE:-Gerenciador_containeres}
+      EVOLUTION_URL: ${EVOLUTION_URL:-http://evolution-api:8080/message/sendText/Gerenciador_containeres}
+      EVOLUTION_TOKEN: ${EVOLUTION_TOKEN}
+      DOCKER_HOST: ${DOCKER_HOST:-unix:///var/run/docker.sock}
+    ports:
+      - "8081:8081"
+    networks:
+      - evolution-net
+    depends_on:
+      - evolution-api
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  redis_data:
+  evolution_instances:
+
+networks:
+  evolution-net:
+    driver: bridge
