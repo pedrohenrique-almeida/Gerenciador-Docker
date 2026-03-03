@@ -1,0 +1,7 @@
+/workspace/src/main/java/api/envio/mensagem/ApiApplication.java
+/workspace/src/main/java/api/envio/mensagem/config/DockerConfig.java
+/workspace/src/main/java/api/envio/mensagem/config/EvolutionConfig.java
+/workspace/src/main/java/api/envio/mensagem/config/Unirest.java
+/workspace/src/main/java/api/envio/mensagem/config/WhatsProperties.java
+/workspace/src/main/java/api/envio/mensagem/controllers/WebhookController.java
+/workspace/src/main/java/api/envio/mensagem/services/DockerService.java

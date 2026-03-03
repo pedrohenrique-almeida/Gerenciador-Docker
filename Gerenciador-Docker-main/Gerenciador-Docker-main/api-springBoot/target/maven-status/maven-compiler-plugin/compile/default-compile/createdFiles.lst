@@ -1,0 +1,8 @@
+api/envio/mensagem/services/DockerService$1.class
+api/envio/mensagem/ApiApplication.class
+api/envio/mensagem/config/WhatsProperties.class
+api/envio/mensagem/controllers/WebhookController.class
+api/envio/mensagem/config/EvolutionConfig.class
+api/envio/mensagem/config/Unirest.class
+api/envio/mensagem/config/DockerConfig.class
+api/envio/mensagem/services/DockerService.class
