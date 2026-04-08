@@ -1,0 +1,26 @@
+services:
+ 
+  web-teste:
+    image: nginx:latest
+    container_name: nginx_teste
+    ports:
+      - "8085:80"
+    restart: always
+
+  # Banco de dados leve para testar conexões
+  db-teste:
+    image: postgres:15-alpine
+    container_name: postgres_teste
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: testdb
+    ports:
+      - "5433:5432" 
+
+ 
+  cache-teste:
+    image: redis:alpine
+    container_name: redis_teste
+    ports:
+      - "6380:6379" 
