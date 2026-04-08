@@ -1,3 +1,0 @@
-VAR#>mvn clean\
-	mvn dependency:purge-local-repository\
-	mvn clean install -U
