@@ -26,7 +26,7 @@ COPY --from=build /workspace/app.jar /app/app.jar
 RUN chown -R spring:spring /app
 USER spring
 
-EXPOSE 8081
+EXPOSE 8090
 
 ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
