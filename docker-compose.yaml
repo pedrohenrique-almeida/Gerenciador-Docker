@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16
-    container_name: postgres
+    container_name: postgres_deploy_teste
     restart: always
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -30,7 +30,7 @@ services:
 
   redis:
     image: redis:latest
-    container_name: redis
+    container_name: redis_deploy_teste
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -41,7 +41,7 @@ services:
 
   evolution-api:
     image: atendai/evolution-api:latest
-    container_name: evolution_api
+    container_name: evolution_api_deploy_teste
     restart: always
     env_file:
       - .env
@@ -62,7 +62,7 @@ services:
       context: ./api-springBoot
       dockerfile: Dockerfile
     image: gerenciador-docker/api-whatsapp:latest
-    container_name: api_whatsapp
+    container_name: api_whatsapp_deploy_teste
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
