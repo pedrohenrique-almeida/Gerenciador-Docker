@@ -35,7 +35,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "8091:8091"
     networks:
       - evolution-net
 
